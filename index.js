@@ -22,15 +22,14 @@ const client = new MongoClient(uri, {
   },
 });
 
+app.get("/", (req, res) => {
+  res.send("hello");
+});
 async function run() {
   try {
     await client.connect();
     const database = client.db("hospital");
     const patientCollection = database.collection("patient");
-
-    app.get("/", (req, res) => {
-      res.send("hello");
-    });
 
     app.post("/add-patient", async (req, res) => {
       const generateUniqueId = async (collection) => {
