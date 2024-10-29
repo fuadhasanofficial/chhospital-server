@@ -23,7 +23,7 @@ const client = new MongoClient(uri, {
 });
 
 app.get("/", (req, res) => {
-  res.send("hello");
+  res.send({ status: "ok" });
 });
 async function run() {
   try {
@@ -42,7 +42,7 @@ async function run() {
         return uniqueId;
       };
 
-      const pataintId = await generateUniqueId(patientCollection);
+      const patientId = await generateUniqueId(patientCollection);
 
       const pataint = req.body.patient;
 
@@ -52,12 +52,12 @@ async function run() {
         // Add the unique ID to the document
         const newDocument = {
           ...document,
-          pataintId: `CHHSF${uniqueId}`,
+          patientId: `CHHSF${uniqueId}`,
         };
 
         // Insert the new document into the collection
         const result = await collection.insertOne(newDocument);
-        const query = { pataintId: `CHHSF${uniqueId}` };
+        const query = { patientId: `CHHSF${uniqueId}` };
         const details = await collection.findOne(query);
 
         res.send({ result, details });
@@ -69,12 +69,36 @@ async function run() {
       // res.send(result);
     });
 
+    app.get("/total-pataient-number", async (req, res) => {
+      const information = await patientCollection.find({}).toArray();
+      const documentCount = await patientCollection.countDocuments();
+      const year = parseInt(req.query.year);
+      const month = parseInt(req.query.month);
+      let data = { number: 0, total: information };
+
+      if (!isNaN(year) && !isNaN(month)) {
+        const query = { year: year, month: month };
+        const option = { year: 1 };
+        const result = await patientCollection.find(query, option).toArray();
+
+        const number = result.length;
+        data = { number: number, pataints: result };
+        res.send(data);
+        console.log(data.number, "filterd");
+      } else {
+        const result = await patientCollection.find({}).toArray();
+        data = { number: documentCount, pataints: result };
+        res.send(data);
+        console.log(data.number, req.url);
+      }
+      console.log(req.url);
+    });
+
     app.get("/pataient/:id", async (req, res) => {
       const id = req.params.id;
-      const query = { pataintId: id };
+      const query = { patientId: id };
       const result = await patientCollection.findOne(query);
       res.send(result);
-      console.log(req.params.id);
     });
   } finally {
   }
