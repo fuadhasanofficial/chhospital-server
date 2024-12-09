@@ -30,6 +30,8 @@ async function run() {
     await client.connect();
     const database = client.db("hospital");
     const patientCollection = database.collection("patient");
+    const expenseCollection = database.collection("expense");
+    const users = database.collection("user");
 
     app.post("/add-patient", async (req, res) => {
       const generateUniqueId = async (collection) => {
@@ -69,6 +71,29 @@ async function run() {
       // res.send(result);
     });
 
+    app.get("/users", async (req, res) => {
+      const data = await users.find({}).toArray();
+      res.send(data);
+    });
+
+    app.put("/users/:id", async (req, res) => {
+      const { id } = req.params;
+      const { role } = req.body;
+      console.log(role, id);
+      const filter = { _id: id };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          role: role,
+        },
+      };
+      try {
+        await users.updateOne(filter, updateDoc, options);
+        res.send({ message: "User role updated" });
+      } catch (err) {
+        res.status(500).send(err);
+      }
+    });
     app.get("/total-pataient-number", async (req, res) => {
       const information = await patientCollection.find({}).toArray();
       const documentCount = await patientCollection.countDocuments();
@@ -99,6 +124,17 @@ async function run() {
       const query = { patientId: id };
       const result = await patientCollection.findOne(query);
       res.send(result);
+    });
+
+    app.post("/api/expenses", async (req, res) => {
+      try {
+        const expense = req.body;
+        const result = await expenseCollection.insertOne(expense);
+        console.log(expense);
+        res.status(201).send(result);
+      } catch (error) {
+        res.status(500).send({ message: "Failed to save expense", error });
+      }
     });
   } finally {
   }
